@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { MatchLength, MatchState, PlayerColor } from './types';
+import { GameState, MatchLength, MatchState, PlayerColor } from './types';
 import { startNewGame } from './gameEngine';
 
 // Karışabilecek karakterler (0/O, 1/I) hariç tutulmuş oda kodu alfabesi.
@@ -20,6 +20,10 @@ export interface Room {
   players: PlayerSlot[]; // en fazla 2
   match: MatchState | null; // null: maç henüz başlamadı (host maç uzunluğu seçmedi)
   rematchOffer: { fromPlayerId: string } | null;
+  /** Bu turda oynanan her hamleden ÖNCEKİ state'in birikimli listesi.
+   * Sıra değişince (endTurn) veya oyun/maç bitince temizlenir — böylece
+   * "son hamle yapılana kadar" (2. veya çiftte 4. hamle) geri alma mümkün olur. */
+  undoStack: GameState[];
 }
 
 const rooms = new Map<string, Room>();
@@ -49,6 +53,7 @@ export function createRoom(hostPlayerId: string, hostName: string, hostSocketId:
     ],
     match: null,
     rematchOffer: null,
+    undoStack: [],
   };
   rooms.set(roomId, room);
   return room;
@@ -104,6 +109,7 @@ export function startMatch(room: Room, matchLength: MatchLength, randInt: (min: 
     lastGameResult: null,
   };
   room.rematchOffer = null;
+  room.undoStack = [];
 }
 
 export function getOpponentSlot(room: Room, playerId: string): PlayerSlot | undefined {

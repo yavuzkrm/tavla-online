@@ -114,6 +114,7 @@ io.on('connection', (socket: Socket) => {
 
     game.dice = rollTurn(randomIntSecure);
     game.movesThisTurn = [];
+    room.undoStack = []; // yeni tur başlıyor, önceki turdan kalan geri alma geçmişi geçersiz
 
     // Hiçbir zar oynanamıyorsa: tur otomatik ve tamamen pas geçilir, zar tekrar atılmaz.
     if (hasNoPlayableMoves(game, game.turn)) {
@@ -147,6 +148,9 @@ io.on('connection', (socket: Socket) => {
         return;
       }
 
+      // Hamleden ÖNCEKİ state'i geri alma yığınına koy (derin kopya — plain veri olduğu için JSON yeterli).
+      room.undoStack.push(JSON.parse(JSON.stringify(game)));
+
       let nextGame = applyMove(game, candidate);
 
       if (!nextGame.gameOver) {
@@ -176,9 +180,27 @@ io.on('connection', (socket: Socket) => {
       }
 
       room.match.game = nextGame;
+      // Tur bittiyse (sıra rakibe geçtiyse) veya oyun/maç bittiyse geri alma artık geçerli değil.
+      if (nextGame.gameOver || nextGame.turn !== slot.color) {
+        room.undoStack = [];
+      }
       broadcastState(roomId);
     }
   );
+
+  socket.on('undo_move', ({ roomId, playerId }: { roomId: string; playerId: string }) => {
+    const room = getRoom(roomId);
+    if (!room || !room.match) return;
+    const slot = getPlayerSlot(room, playerId);
+    if (!slot) return;
+    const game = room.match.game;
+    if (game.gameOver) return;
+    if (game.turn !== slot.color) return; // sıra sende değilse geri alamazsın
+    if (room.undoStack.length === 0) return; // bu turda henüz hamle yapılmadı, geri alınacak bir şey yok
+
+    room.match.game = room.undoStack.pop()!;
+    broadcastState(roomId);
+  });
 
   socket.on('send_chat', ({ roomId, playerId, text }: { roomId: string; playerId: string; text: string }) => {
     const room = getRoom(roomId);

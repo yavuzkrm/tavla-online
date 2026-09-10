@@ -140,15 +140,22 @@ html, body, #root {
 
 /* Masaüstü/geniş ekranlarda tahtayı büyüt, ama mobildeki "tüm ekranı doldur"
    mantığını (height:100%) miras almasın — yoksa pencere yüksekse tahta
-   anormal derecede uzar. Genişliğe göre sabit bir en-boy oranı ver. */
+   anormal derecede uzar. Genişliğe göre sabit bir en-boy oranı ver ve
+   gövdeyi (body) kullanarak gerçekten ortala (yatay+dikey). */
 @media (min-width: 700px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .game-screen {
-    max-width: 760px;
+    max-width: 820px;
     height: auto;
     max-height: 94vh;
-    margin: 3vh auto;
-    padding: 20px 24px;
-    gap: 14px;
+    margin: 0;
+    padding: 22px 28px;
+    gap: 16px;
   }
 
   .board-wrapper {
@@ -158,20 +165,35 @@ html, body, #root {
   .board-frame {
     flex: none;
     aspect-ratio: 16 / 11;
-    padding: 12px;
+    padding: 14px;
   }
 
   .checker {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
 
   .player-card {
-    padding: 10px 16px;
+    padding: 10px 18px;
   }
 
   .player-name {
-    font-size: 0.95rem;
+    font-size: 1rem;
+  }
+
+  .title {
+    font-size: 2.8rem;
+  }
+}
+
+@media (min-width: 1300px) {
+  .game-screen {
+    max-width: 960px;
+  }
+
+  .checker {
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -275,6 +297,7 @@ html, body, #root {
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  min-height: 0;
 }
 
 .board-frame {
@@ -285,6 +308,7 @@ html, body, #root {
   padding: 6px;
   flex: 1;
   gap: 4px;
+  min-height: 0;
 }
 
 .board-half {
@@ -293,6 +317,7 @@ html, body, #root {
   flex-direction: column;
   justify-content: space-between;
   gap: 4px;
+  min-height: 0;
 }
 
 .board-row {
@@ -380,13 +405,6 @@ html, body, #root {
   color: var(--cream);
 }
 
-.point-label {
-  position: absolute;
-  bottom: 2px;
-  font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
 .board-bar {
   width: 44px;
   background: var(--panel);
@@ -396,6 +414,7 @@ html, body, #root {
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
+  min-height: 0;
 }
 
 .bar-section {
@@ -409,6 +428,9 @@ html, body, #root {
 .dice-area {
   display: flex;
   gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
 }
 
 .die {

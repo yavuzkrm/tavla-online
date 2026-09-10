@@ -49,7 +49,6 @@ function Triangle({
           ))}
         {count > 5 && <div className="checker-overflow">+{count - 5}</div>}
       </div>
-      <div className="point-label">{rel}</div>
     </div>
   );
 }
@@ -106,6 +105,16 @@ export function Board() {
       selectPoint(null);
     }
   }
+
+  function undoMove() {
+    socket.emit('undo_move', { roomId, playerId });
+    selectPoint(null);
+  }
+
+  // Bu turda en az bir hamle yapıldıysa ve hâlâ bizim sıramızdaysa geri alınabilir
+  // ("son hamle yapılana kadar" — son hamleden sonra sıra otomatik rakibe geçtiği
+  // için o an zaten isMyTurn false olur ve buton kendiliğinden kaybolur).
+  const canUndo = isMyTurn && game.movesThisTurn.length > 0;
 
   const destAbsSet = new Set(destinationsFromSelected.map((m) => m.to));
   const canBearOff = destinationsFromSelected.some((m) => m.to === -2);
@@ -167,6 +176,11 @@ export function Board() {
         {isMyTurn && canBearOff && (
           <button className="btn btn-secondary" onClick={bearOff}>
             Pul Çıkar
+          </button>
+        )}
+        {canUndo && (
+          <button className="btn btn-secondary" onClick={undoMove}>
+            ↩ Geri Al
           </button>
         )}
 
