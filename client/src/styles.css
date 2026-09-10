@@ -150,8 +150,8 @@ html, body, #root {
   }
 
   .game-screen {
-    width: 96vw;
-    max-width: 1180px;
+    width: 92vw;
+    max-width: 760px;
     height: auto;
     max-height: 96vh;
     margin: 0;
@@ -166,13 +166,13 @@ html, body, #root {
   .board-frame {
     flex: none;
     width: 100%;
-    aspect-ratio: 15 / 8;
+    aspect-ratio: 4 / 3;
     padding: 16px;
   }
 
   .checker {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
 
   .player-card {
@@ -190,16 +190,16 @@ html, body, #root {
 
 @media (min-width: 1500px) {
   .game-screen {
-    max-width: 1440px;
+    max-width: 860px;
   }
 
   .board-frame {
-    aspect-ratio: 15 / 7;
+    aspect-ratio: 4 / 3;
   }
 
   .checker {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
   }
 }
 
