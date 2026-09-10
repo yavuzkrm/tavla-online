@@ -299,6 +299,91 @@ export function getMaxPlayableDiceSequence(state: GameState, color: PlayerColor,
   return results.filter((r) => r.length === maxLen);
 }
 
+// ---------------------------------------------------------------------------
+// Kombinasyon hamlesi — zarların toplamı kadar TEK hamlede gitme
+// (örn. 3-5 geldiyse, ara nokta uygunsa aynı pulu doğrudan 8 nokta ileri
+// taşıyabilme; çiftte (4 aynı zar) aynı pul üzerinde 2/3/4 zarı art arda
+// zincirleme). Bu YENİ bir kural değildir — sadece birden fazla tek-zar
+// hamlesini tek bir tıklamada, sırayla uygulamanın kullanıcı arayüzü
+// kolaylığıdır; her ara adım normal kural motoruyla doğrulanır.
+// ---------------------------------------------------------------------------
+
+/**
+ * Belirli bir başlangıç noktasından (from: mutlak indeks veya bar için -1),
+ * kalan zarların 2'den fazlasını zincirleyerek ulaşılabilecek TÜM hedefleri
+ * (ve o hedefe ulaşmak için kullanılan zar sırasını) döndürür. Tek zarla
+ * zaten ulaşılabilen hedefler burada YER ALMAZ (en az 2 zar kullanılmalı).
+ */
+export function getComboDestinationsFromOrigin(
+  state: GameState,
+  color: PlayerColor,
+  origin: number,
+  dice: number[]
+): { to: number; dice: number[] }[] {
+  const results: { to: number; dice: number[] }[] = [];
+  const seenTo = new Set<number>();
+
+  function dfs(currentState: GameState, currentFrom: number, remaining: number[], path: number[]) {
+    const distinct = Array.from(new Set(remaining));
+    for (const d of distinct) {
+      const moves = getSingleDieMoves(currentState, color, [d]).filter((m) => m.from === currentFrom);
+      for (const mv of moves) {
+        const newPath = [...path, d];
+        if (newPath.length >= 2 && !seenTo.has(mv.to)) {
+          seenTo.add(mv.to);
+          results.push({ to: mv.to, dice: newPath });
+        }
+        // Pul tahtadan çıktıysa (bear off) zincir orada biter, devam edilemez.
+        if (mv.to !== -2 && newPath.length < 4) {
+          const nextState = applyMove(currentState, mv);
+          const nextRemaining = removeUsedDie(remaining, d);
+          dfs(nextState, mv.to, nextRemaining, newPath);
+        }
+      }
+    }
+  }
+
+  dfs(state, origin, dice, []);
+  return results;
+}
+
+/**
+ * Belirli bir (from, to) çifti için, mevcut zarlarla bu hedefe ulaşmayı
+ * sağlayan geçerli bir hamle zinciri var mı diye arar; varsa o zinciri
+ * (Move[]) döndürür, yoksa null. Sunucu, istemciden "şuraya direkt git"
+ * isteği geldiğinde bunu kullanarak zinciri kendisi yeniden türetir —
+ * istemciden gelen zar bilgisine güvenmez.
+ */
+export function findComboPath(
+  state: GameState,
+  color: PlayerColor,
+  from: number,
+  to: number,
+  dice: number[]
+): Move[] | null {
+  function dfs(currentState: GameState, currentFrom: number, remaining: number[]): Move[] | null {
+    const distinct = Array.from(new Set(remaining));
+    for (const d of distinct) {
+      const moves = getSingleDieMoves(currentState, color, [d]).filter((m) => m.from === currentFrom);
+      for (const mv of moves) {
+        if (mv.to === to) {
+          return [mv];
+        }
+        if (mv.to !== -2) {
+          const nextState = applyMove(currentState, mv);
+          const nextRemaining = removeUsedDie(remaining, d);
+          const rest = dfs(nextState, mv.to, nextRemaining);
+          if (rest) return [mv, ...rest];
+        }
+      }
+    }
+    return null;
+  }
+
+  const path = dfs(state, from, dice);
+  return path && path.length >= 2 ? path : null;
+}
+
 /**
  * Şu ANDAKİ durumdan (bu turda zaten bir kısım zar oynanmış olabilir) itibaren,
  * oyuncunun oynamasına İZİN VERİLEN hamlelerin listesini döndürür. Bu liste,

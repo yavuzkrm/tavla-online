@@ -12,6 +12,13 @@ export interface Move {
   die: number;
 }
 
+/** Zarların toplamı kadar tek hamlede (zincirleme) ulaşılabilen bir hedef. */
+export interface ComboMove {
+  from: number;
+  to: number;
+  dice: number[];
+}
+
 export interface GameState {
   points: BoardPoint[];
   bar: { white: number; black: number };
@@ -48,5 +55,6 @@ export interface StateUpdatePayload {
   match: MatchState;
   pip: { white: number; black: number };
   legalMoves: Move[];
+  comboMoves: ComboMove[];
   players: RoomPlayer[];
 }

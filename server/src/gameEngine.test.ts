@@ -5,6 +5,8 @@ import {
   getSingleDieMoves,
   getLegalMovesNow,
   getMaxPlayableDiceSequence,
+  getComboDestinationsFromOrigin,
+  findComboPath,
   isAllCheckersHome,
   isMars,
   toAbsoluteIndex,
@@ -159,6 +161,43 @@ describe('çift zar (double)', () => {
     expect(maxLen).toBeGreaterThanOrEqual(1);
     const legalNow = getLegalMovesNow(state, 'white');
     expect(legalNow.length).toBeGreaterThan(0);
+  });
+});
+
+describe('kombinasyon hamlesi (zarların toplamı ile direkt gitme)', () => {
+  it('ara nokta müsaitse iki zarın toplamı kadar direkt hedef bulunur', () => {
+    const state = emptyState('white', [3, 5]);
+    state.points[toAbsoluteIndex(15, 'white')] = { color: 'white', count: 1 };
+    // rel15 -3-> rel12 -5-> rel7 (veya sırası ters de olabilir), toplamda 8 ileri: rel7
+    const combos = getComboDestinationsFromOrigin(state, 'white', toAbsoluteIndex(15, 'white'), [3, 5]);
+    expect(combos.some((c: any) => c.to === toAbsoluteIndex(7, 'white'))).toBe(true);
+  });
+
+  it('ara nokta rakip tarafından kapalıysa kombinasyon hedefi bulunmaz', () => {
+    const state = emptyState('white', [3, 5]);
+    state.points[toAbsoluteIndex(15, 'white')] = { color: 'white', count: 1 };
+    // rel15-3->rel12 kapalı, rel15-5->rel10 açık ama rel10-3->rel7 de deneyip bulmalı;
+    // ikisini de kapatırsak hiç combo olmamalı
+    state.points[toAbsoluteIndex(12, 'white')] = { color: 'black', count: 2 };
+    state.points[toAbsoluteIndex(10, 'white')] = { color: 'black', count: 2 };
+    const combos = getComboDestinationsFromOrigin(state, 'white', toAbsoluteIndex(15, 'white'), [3, 5]);
+    expect(combos.length).toBe(0);
+  });
+
+  it('çiftte (4 aynı zar) aynı pul art arda 4 zarı kullanarak ulaşabildiği yere gidebilir', () => {
+    const state = emptyState('white', [2, 2, 2, 2]);
+    state.points[toAbsoluteIndex(20, 'white')] = { color: 'white', count: 1 };
+    const combos = getComboDestinationsFromOrigin(state, 'white', toAbsoluteIndex(20, 'white'), [2, 2, 2, 2]);
+    // rel20 -> 18 -> 16 -> 14 -> 12 (4 kez 2 kullanarak)
+    expect(combos.some((c: any) => c.to === toAbsoluteIndex(12, 'white') && c.dice.length === 4)).toBe(true);
+  });
+
+  it('findComboPath aynı hedefe giden geçerli zar zincirini döndürür', () => {
+    const state = emptyState('white', [3, 5]);
+    state.points[toAbsoluteIndex(15, 'white')] = { color: 'white', count: 1 };
+    const path = findComboPath(state, 'white', toAbsoluteIndex(15, 'white'), toAbsoluteIndex(7, 'white'), [3, 5]);
+    expect(path).not.toBeNull();
+    expect(path!.length).toBe(2);
   });
 });
 

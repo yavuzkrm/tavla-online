@@ -4,6 +4,8 @@ import { Server, Socket } from 'socket.io';
 import {
   applyMove,
   endTurn,
+  findComboPath,
+  getComboDestinationsFromOrigin,
   getLegalMovesNow,
   getPipCount,
   hasNoPlayableMoves,
@@ -19,9 +21,10 @@ import {
   getOpponentSlot,
   getRoom,
   joinRoom,
+  Room,
   startMatch,
 } from './roomManager';
-import { MatchLength, Move, PlayerColor } from './types';
+import { ComboMove, GameState, MatchLength, Move, PlayerColor } from './types';
 
 const PORT = Number(process.env.PORT) || 4000;
 const RECONNECT_GRACE_MS = 30_000;
@@ -53,12 +56,63 @@ function broadcastState(roomId: string) {
   const legalMoves = room.match.game.gameOver
     ? []
     : getLegalMovesNow(room.match.game, room.match.game.turn);
+
+  // Zarların toplamı kadar TEK hamlede gidilebilecek hedefler (kombinasyon hamlesi).
+  const comboMoves: ComboMove[] = [];
+  if (!room.match.game.gameOver && room.match.game.dice) {
+    const color = room.match.game.turn;
+    const origins = new Set(legalMoves.map((m) => m.from));
+    for (const origin of origins) {
+      const combos = getComboDestinationsFromOrigin(room.match.game, color, origin, room.match.game.dice);
+      for (const c of combos) comboMoves.push({ from: origin, to: c.to, dice: c.dice });
+    }
+  }
+
   io.to(roomId).emit('state_update', {
     match: room.match,
     pip,
     legalMoves,
+    comboMoves,
     players: room.players.map((p) => ({ playerId: p.playerId, name: p.name, color: p.color, connected: p.connected })),
   });
+}
+
+/**
+ * Bir (veya kombinasyon hamlesinde birden çok) hamle uygulandıktan SONRAKİ ortak mantık:
+ * oyun bittiyse mars/puan/maç bitişini işler, bitmediyse tur bitip bitmediğini kontrol eder.
+ * Hem tekli hem kombinasyon hamlesi bu fonksiyonu kullanır (kod tekrarını önler).
+ */
+function finishMoveApplication(room: Room, slot: { color: PlayerColor }, nextGameIn: GameState): void {
+  if (!room.match) return;
+  let nextGame = nextGameIn;
+
+  if (!nextGame.gameOver) {
+    if (getLegalMovesNow(nextGame, slot.color).length === 0) {
+      nextGame = endTurn(nextGame);
+    }
+  } else {
+    const winner = nextGame.winner as PlayerColor;
+    const isMarsWin = nextGame.isMarsWin;
+    const points = isMarsWin ? 2 : 1;
+    room.match.score[winner] += points;
+    room.match.lastGameResult = {
+      winner,
+      isMars: isMarsWin,
+      gameIndex: (room.match.lastGameResult?.gameIndex ?? 0) + 1,
+    };
+
+    if (room.match.score[winner] >= room.match.matchLength) {
+      room.match.matchOver = true;
+      room.match.matchWinner = winner;
+    } else {
+      nextGame = startNewGame(randomIntSecure);
+    }
+  }
+
+  room.match.game = nextGame;
+  if (nextGame.gameOver || nextGame.turn !== slot.color) {
+    room.undoStack = [];
+  }
 }
 
 io.on('connection', (socket: Socket) => {
@@ -151,39 +205,41 @@ io.on('connection', (socket: Socket) => {
       // Hamleden ÖNCEKİ state'i geri alma yığınına koy (derin kopya — plain veri olduğu için JSON yeterli).
       room.undoStack.push(JSON.parse(JSON.stringify(game)));
 
-      let nextGame = applyMove(game, candidate);
+      const nextGame = applyMove(game, candidate);
+      finishMoveApplication(room, slot, nextGame);
+      broadcastState(roomId);
+    }
+  );
 
-      if (!nextGame.gameOver) {
-        // Bu oyuncu için oynanabilecek başka zar kalmadıysa turu bitir.
-        if (getLegalMovesNow(nextGame, slot.color).length === 0) {
-          nextGame = endTurn(nextGame);
-        }
-      } else {
-        // Oyun bitti: mars kontrolü applyMove içinde yapıldı, puanı ekle.
-        const winner = nextGame.winner as PlayerColor;
-        const isMarsWin = nextGame.isMarsWin;
-        const points = isMarsWin ? 2 : 1;
-        room.match.score[winner] += points;
-        room.match.lastGameResult = {
-          winner,
-          isMars: isMarsWin,
-          gameIndex: (room.match.lastGameResult?.gameIndex ?? 0) + 1,
-        };
+  // Zarların toplamı kadar TEK hamlede gitme (kombinasyon hamlesi). İstemci sadece
+  // "nereden nereye" gitmek istediğini söyler; hangi zarların kullanılacağına ve
+  // ara adımların geçerliliğine sunucu kendi karar verir (istemciye güvenilmez).
+  socket.on(
+    'request_combo_move',
+    ({ roomId, playerId, from, to }: { roomId: string; playerId: string; from: number; to: number }) => {
+      const room = getRoom(roomId);
+      if (!room || !room.match) return;
+      const slot = getPlayerSlot(room, playerId);
+      if (!slot) return;
+      const game = room.match.game;
+      if (game.gameOver) return;
+      if (game.turn !== slot.color) return;
+      if (!game.dice) return;
 
-        if (room.match.score[winner] >= room.match.matchLength) {
-          room.match.matchOver = true;
-          room.match.matchWinner = winner;
-        } else {
-          // Maç bitmedi: otomatik yeni oyun başlat.
-          nextGame = startNewGame(randomIntSecure);
-        }
+      const path = findComboPath(game, slot.color, from, to, game.dice);
+      if (!path) {
+        socket.emit('illegal_move', { move: { from, to } });
+        return;
       }
 
-      room.match.game = nextGame;
-      // Tur bittiyse (sıra rakibe geçtiyse) veya oyun/maç bittiyse geri alma artık geçerli değil.
-      if (nextGame.gameOver || nextGame.turn !== slot.color) {
-        room.undoStack = [];
+      room.undoStack.push(JSON.parse(JSON.stringify(game)));
+
+      let nextGame = game;
+      for (const mv of path) {
+        nextGame = applyMove(nextGame, mv);
+        if (nextGame.gameOver) break;
       }
+      finishMoveApplication(room, slot, nextGame);
       broadcastState(roomId);
     }
   );
@@ -246,7 +302,15 @@ io.on('connection', (socket: Socket) => {
     const slot = getPlayerSlot(room, playerId)!;
     socket.emit('room_joined', { roomId: room.roomId, color: slot.color });
     io.to(roomId).emit('opponent_reconnected', { playerId });
-    if (room.match) broadcastState(roomId);
+    if (room.match) {
+      broadcastState(roomId);
+    } else if (room.players.length === 2) {
+      // Maç henüz başlamamıştı (host maç uzunluğu seçim ekranındaydı) — o ekrana geri dönsün.
+      io.to(roomId).emit('room_ready', {
+        players: room.players.map((p) => ({ playerId: p.playerId, name: p.name, color: p.color })),
+        hostPlayerId: room.hostPlayerId,
+      });
+    }
   });
 
   socket.on('disconnect', () => {

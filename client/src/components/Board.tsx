@@ -2,6 +2,7 @@ import React from 'react';
 import { socket } from '../socket';
 import { useAppStore } from '../store';
 import { PlayerColor } from '../types';
+import { playClickSound } from '../sound';
 
 // Göreceli (1-24) -> mutlak (0-23) dönüşümü (client tarafında sadece görsel amaçlı, kural motoru sunucuda).
 function toAbsoluteIndex(rel: number, color: PlayerColor): number {
@@ -54,40 +55,61 @@ function Triangle({
 }
 
 export function Board() {
-  const { match, myColor, legalMoves, selectedPoint, selectPoint, playerId, roomId } = useAppStore();
+  const { match, myColor, legalMoves, comboMoves, selectedPoint, selectPoint, playerId, roomId } = useAppStore();
   if (!match || !myColor) return null;
   const game = match.game;
   const isMyTurn = game.turn === myColor && !game.gameOver;
   const opponentColor: PlayerColor = myColor === 'white' ? 'black' : 'white';
 
   const mySources = new Set(legalMoves.filter((m) => m.color === myColor).map((m) => m.from));
-  const destinationsFromSelected = legalMoves.filter((m) => m.color === myColor && m.from === selectedPoint);
+  // Tek zarla ulaşılabilen hedefler + zarların toplamı ile (kombinasyon) ulaşılabilen hedefler — ikisi de tıklanabilir olmalı.
+  const singleDestinations = legalMoves.filter((m) => m.color === myColor && m.from === selectedPoint);
+  const comboDestinations = comboMoves.filter((c) => c.from === selectedPoint);
 
   function relOf(abs: number): number {
     return myColor === 'white' ? abs + 1 : 24 - abs;
   }
 
+  /** Seçili pulu `to` hedefine gönderir — tek zarla mı yoksa zar zinciriyle mi gideceğine
+   * göre doğru sunucu olayını seçer. Bar (-1) ve pul çıkarma (-2) için de çalışır. */
+  function moveTo(to: number) {
+    if (selectedPoint === null) return;
+    const single = singleDestinations.find((m) => m.to === to);
+    if (single) {
+      socket.emit('request_move', { roomId, playerId, move: { from: single.from, to: single.to, die: single.die } });
+      selectPoint(null);
+      return;
+    }
+    const combo = comboDestinations.find((c) => c.to === to);
+    if (combo) {
+      socket.emit('request_combo_move', { roomId, playerId, from: combo.from, to: combo.to });
+      selectPoint(null);
+    }
+  }
+
   function trySelectOrMove(abs: number) {
     if (!isMyTurn || !game.dice) return;
-    const rel = relOf(abs);
 
     // Zaten bir kaynak seçiliyse ve bu nokta bir hedefse -> hamleyi gönder.
     if (selectedPoint !== null) {
-      const move = destinationsFromSelected.find((m) => m.to === abs);
-      if (move) {
-        socket.emit('request_move', { roomId, playerId, move: { from: move.from, to: move.to, die: move.die } });
-        selectPoint(null);
+      const isDestination = singleDestinations.some((m) => m.to === abs) || comboDestinations.some((c) => c.to === abs);
+      if (isDestination) {
+        moveTo(abs);
         return;
       }
     }
 
     // Bar'da pul varken sadece bar seçilebilir.
     if (game.bar[myColor] > 0) {
-      if (mySources.has(-1)) selectPoint(-1);
+      if (mySources.has(-1)) {
+        playClickSound();
+        selectPoint(-1);
+      }
       return;
     }
 
     if (mySources.has(abs)) {
+      playClickSound();
       selectPoint(selectedPoint === abs ? null : abs);
     } else {
       selectPoint(null);
@@ -96,14 +118,6 @@ export function Board() {
 
   function rollDice() {
     socket.emit('roll_dice', { roomId, playerId });
-  }
-
-  function bearOff() {
-    const move = destinationsFromSelected.find((m) => m.to === -2);
-    if (move) {
-      socket.emit('request_move', { roomId, playerId, move: { from: move.from, to: move.to, die: move.die } });
-      selectPoint(null);
-    }
   }
 
   function undoMove() {
@@ -116,8 +130,11 @@ export function Board() {
   // için o an zaten isMyTurn false olur ve buton kendiliğinden kaybolur).
   const canUndo = isMyTurn && game.movesThisTurn.length > 0;
 
-  const destAbsSet = new Set(destinationsFromSelected.map((m) => m.to));
-  const canBearOff = destinationsFromSelected.some((m) => m.to === -2);
+  const destAbsSet = new Set([
+    ...singleDestinations.map((m) => m.to),
+    ...comboDestinations.map((c) => c.to),
+  ]);
+  const canBearOff = destAbsSet.has(-2);
 
   const renderRow = (relList: number[], startIndex: number) => (
     <div className="board-row">
@@ -140,7 +157,7 @@ export function Board() {
       <div className="board-frame">
         <div className="board-half">
           {renderRow(TOP_LEFT, 0)}
-          {renderRow(BOTTOM_LEFT, 0)}
+          {renderRow(BOTTOM_LEFT, 1)}
         </div>
 
         <div className="board-bar">
@@ -152,7 +169,7 @@ export function Board() {
           <DiceInBar />
           <div className="bar-section bar-mine">
             {Array.from({ length: match.game.bar[myColor] }).map((_, i) => (
-              <div key={i} onClick={() => selectPoint(-1)}>
+              <div key={i} onClick={() => trySelectOrMove(-1)}>
                 <Checker color={myColor} highlight={selectedPoint === -1} />
               </div>
             ))}
@@ -161,7 +178,22 @@ export function Board() {
 
         <div className="board-half">
           {renderRow(TOP_RIGHT, 6)}
-          {renderRow(BOTTOM_RIGHT, 6)}
+          {renderRow(BOTTOM_RIGHT, 7)}
+        </div>
+
+        {/* Pul toplama (bear-off) köşesi — gerçek tahtadaki gibi tahtanın kenarında.
+            Alt bölüm (kendi pulların) sadece çıkarılabilir bir pul seçiliyken parlar
+            ve tıklanınca pulu çıkarır; "Pul Çıkar" butonuna gerek kalmaz. */}
+        <div className="bear-off-tray">
+          <div className="tray-section tray-opponent">
+            <div className={`tray-checker tray-checker-${opponentColor}`}>{game.borneOff[opponentColor]}</div>
+          </div>
+          <div
+            className={`tray-section tray-mine ${canBearOff ? 'tray-active' : ''}`}
+            onClick={() => canBearOff && moveTo(-2)}
+          >
+            <div className={`tray-checker tray-checker-${myColor}`}>{game.borneOff[myColor]}</div>
+          </div>
         </div>
       </div>
 
@@ -171,11 +203,6 @@ export function Board() {
         {isMyTurn && !game.dice && (
           <button className="btn btn-primary roll-btn" onClick={rollDice}>
             Zar At
-          </button>
-        )}
-        {isMyTurn && canBearOff && (
-          <button className="btn btn-secondary" onClick={bearOff}>
-            Pul Çıkar
           </button>
         )}
         {canUndo && (

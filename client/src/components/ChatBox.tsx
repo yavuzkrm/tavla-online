@@ -18,17 +18,11 @@ export function ChatBox({ onClose }: { onClose: () => void }) {
         <span>Sohbet</span>
         <button onClick={onClose}>✕</button>
       </div>
-      <div className="chat-messages">
-        {chat.map((m, i) => (
-          <div key={i} className={`chat-msg chat-msg-${m.color}`}>
-            <b>{m.name}:</b> {m.text}
-          </div>
-        ))}
-      </div>
       <div className="chat-input-row">
         <input
           className="text-input"
           value={text}
+          autoComplete="off"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           placeholder="Mesaj yaz…"
@@ -36,6 +30,13 @@ export function ChatBox({ onClose }: { onClose: () => void }) {
         <button className="btn btn-primary" onClick={send}>
           Gönder
         </button>
+      </div>
+      <div className="chat-messages">
+        {chat.map((m, i) => (
+          <div key={i} className={`chat-msg chat-msg-${m.color}`}>
+            <b>{m.name}:</b> {m.text}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { socket } from '../socket';
 import { useAppStore } from '../store';
 import { ChatBox } from './ChatBox';
+import { playClickSound, setSoundEnabled } from '../sound';
 
 const EMOJIS = ['😀', '😂', '😮', '😡', '👍', '🎲'];
 
@@ -17,6 +18,13 @@ export function ControlBar() {
     setShowEmoji(false);
   };
 
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+    if (next) playClickSound();
+  };
+
   return (
     <>
       {showChat && <ChatBox onClose={() => setShowChat(false)} />}
@@ -30,7 +38,7 @@ export function ControlBar() {
         </div>
       )}
       <div className="control-bar">
-        <button className="control-btn" onClick={() => setSoundOn((v) => !v)}>
+        <button className="control-btn" onClick={toggleSound}>
           {soundOn ? '🔊' : '🔇'}
         </button>
         <button className="control-btn" onClick={() => setMicOn((v) => !v)}>

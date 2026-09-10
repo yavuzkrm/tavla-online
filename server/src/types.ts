@@ -47,6 +47,13 @@ export interface GameState {
   lastSkippedDice: number[];
 }
 
+/** Zarların toplamı kadar tek hamlede (zincirleme) ulaşılabilen bir hedef. */
+export interface ComboMove {
+  from: number;
+  to: number;
+  dice: number[];
+}
+
 export interface MatchState {
   matchLength: MatchLength;
   score: { white: number; black: number };

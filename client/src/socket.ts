@@ -18,3 +18,20 @@ export function getOrCreatePlayerId(): string {
   }
   return id;
 }
+
+// Aktif oda kodu localStorage'da tutulur — hem sayfa yenilenince hem de
+// bağlantı bir an kopup Socket.IO otomatik yeniden bağlanınca (ağ dalgalanması
+// vb.) aynı odaya otomatik geri dönebilmek için.
+const ROOM_KEY = 'tavla_room_id';
+
+export function saveRoomId(roomId: string): void {
+  localStorage.setItem(ROOM_KEY, roomId);
+}
+
+export function getSavedRoomId(): string | null {
+  return localStorage.getItem(ROOM_KEY);
+}
+
+export function clearSavedRoomId(): void {
+  localStorage.removeItem(ROOM_KEY);
+}
