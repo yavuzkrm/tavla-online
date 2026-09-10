@@ -7,11 +7,10 @@ import { playClickSound, setSoundEnabled } from '../sound';
 const EMOJIS = ['😀', '😂', '😮', '😡', '👍', '🎲'];
 
 export function ControlBar() {
-  const { roomId, playerId } = useAppStore();
+  const { roomId, playerId, chatOpen, setChatOpen, unreadChatCount } = useAppStore();
   const [soundOn, setSoundOn] = useState(true);
   const [micOn, setMicOn] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showChat, setShowChat] = useState(false);
 
   const sendEmoji = (emoji: string) => {
     socket.emit('send_emoji', { roomId, playerId, emoji });
@@ -27,7 +26,7 @@ export function ControlBar() {
 
   return (
     <>
-      {showChat && <ChatBox onClose={() => setShowChat(false)} />}
+      {chatOpen && <ChatBox onClose={() => setChatOpen(false)} />}
       {showEmoji && (
         <div className="emoji-picker">
           {EMOJIS.map((e) => (
@@ -47,8 +46,11 @@ export function ControlBar() {
         <button className="control-btn" onClick={() => setShowEmoji((v) => !v)}>
           😀
         </button>
-        <button className="control-btn" onClick={() => setShowChat((v) => !v)}>
+        <button className="control-btn control-btn-chat" onClick={() => setChatOpen(!chatOpen)}>
           💬
+          {!chatOpen && unreadChatCount > 0 && (
+            <span className="unread-badge">{unreadChatCount > 9 ? '9+' : unreadChatCount}</span>
+          )}
         </button>
       </div>
     </>

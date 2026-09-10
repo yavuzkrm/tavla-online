@@ -1,5 +1,8 @@
 // sound.ts — Harici ses dosyası olmadan, tarayıcının Web Audio API'siyle
-// anlık üretilen kısa ses efektleri (zar, hamle, vurma, pul çıkarma).
+// anlık üretilen ses efektleri. Gerçekçilik için düz sinüs/kare dalga yerine
+// FİLTRELENMİŞ GÜRÜLTÜ (bant geçiren filtre + gürültü) ve kısa "darbe" (thump)
+// katmanları birleştiriliyor — bu, tahtaya vuran zar/pul seslerine çok daha
+// yakın bir doku veriyor.
 
 let ctx: AudioContext | null = null;
 let enabled = true;
@@ -10,8 +13,6 @@ function getCtx(): AudioContext | null {
   if (!AudioCtor) return null;
   if (!ctx) ctx = new AudioCtor();
   if (ctx.state === 'suspended') {
-    // Tarayıcıların otomatik oynatma kısıtlaması: ilk ses, bir kullanıcı
-    // etkileşimi (tıklama) içinde tetiklenmeli — zaten öyle kullanılıyor.
     ctx.resume().catch(() => {});
   }
   return ctx;
@@ -25,17 +26,20 @@ export function isSoundEnabled(): boolean {
   return enabled;
 }
 
-function tone(freq: number, duration: number, type: OscillatorType, startTime = 0, peakGain = 0.15) {
+/** Kısa, alçak frekanslı bir "darbe" (thump) — fiziksel bir cismin sert bir yüzeye
+ * vurma hissini verir. Frekans hafifçe düşerek biter (gerçek bir vuruşun doğal sönümü). */
+function thump(freq: number, duration: number, startTime = 0, peakGain = 0.3) {
   if (!enabled) return;
   const c = getCtx();
   if (!c) return;
   const osc = c.createOscillator();
   const gain = c.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
+  osc.type = 'sine';
   const t0 = c.currentTime + startTime;
+  osc.frequency.setValueAtTime(freq, t0);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(freq * 0.55, 40), t0 + duration);
   gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.008);
+  gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.004);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
   osc.connect(gain);
   gain.connect(c.destination);
@@ -43,60 +47,116 @@ function tone(freq: number, duration: number, type: OscillatorType, startTime = 
   osc.stop(t0 + duration + 0.02);
 }
 
-function noiseBurst(duration: number, startTime = 0, peakGain = 0.2) {
+/** Bant geçiren filtreden geçirilmiş beyaz gürültü — "tık", "takırtı", "çatırtı"
+ * gibi dokulu, kısa perküsif sesler için düz gürültüden çok daha gerçekçi. */
+function filteredNoise(
+  duration: number,
+  opts: { frequency?: number; type?: BiquadFilterType; q?: number; startTime?: number; peakGain?: number } = {}
+) {
   if (!enabled) return;
   const c = getCtx();
   if (!c) return;
+  const { frequency = 1200, type = 'bandpass', q = 1, startTime = 0, peakGain = 0.25 } = opts;
+
   const bufferSize = Math.max(1, Math.floor(c.sampleRate * duration));
   const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    data[i] = Math.random() * 2 - 1;
   }
+
   const src = c.createBufferSource();
   src.buffer = buffer;
+  const filter = c.createBiquadFilter();
+  filter.type = type;
+  filter.frequency.value = frequency;
+  filter.Q.value = q;
   const gain = c.createGain();
+
   const t0 = c.currentTime + startTime;
   gain.gain.setValueAtTime(peakGain, t0);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-  src.connect(gain);
+
+  src.connect(filter);
+  filter.connect(gain);
   gain.connect(c.destination);
   src.start(t0);
 }
 
-/** Zar sallanıyormuş gibi birkaç kısa takırtı + kısa bir "tık" sesi. */
+/** Zar sesi: birkaç düzensiz "takırtı" (zarın tahtaya çarpıp sekmesi) + son bir
+ * alçak "toc" (zarın yere/tahtaya oturması). Her takırtının frekansı hafifçe
+ * farklı seçiliyor ki mekanik/tekrarlı değil, doğal/rastgele hissettirsin. */
 export function playDiceSound(): void {
-  noiseBurst(0.05, 0);
-  noiseBurst(0.045, 0.07);
-  noiseBurst(0.06, 0.15);
-  tone(190, 0.07, 'square', 0.19, 0.06);
+  const knockTimes = [0, 0.055, 0.11, 0.165, 0.21];
+  const freqs = [2400, 1900, 2600, 1700, 2100];
+  knockTimes.forEach((t, i) => {
+    filteredNoise(0.035 + Math.random() * 0.01, {
+      frequency: freqs[i] + (Math.random() * 200 - 100),
+      type: 'bandpass',
+      q: 0.6 + Math.random() * 0.4,
+      startTime: t,
+      peakGain: 0.16 + Math.random() * 0.06,
+    });
+  });
+  thump(150, 0.11, 0.23, 0.16);
 }
 
-/** Pul hareket sesi — kısa, yumuşak bir "tık". */
+/** Pul (taş) hareket sesi: kısa, tok bir "tak" — filtrelenmiş gürültü + hafif alçak darbe. */
 export function playMoveSound(): void {
-  tone(520, 0.06, 'triangle', 0, 0.12);
+  filteredNoise(0.045, { frequency: 950, type: 'bandpass', q: 1.3, startTime: 0, peakGain: 0.22 });
+  thump(300, 0.05, 0, 0.14);
 }
 
-/** Vurma (hit) sesi — daha sert/dramatik. */
+/** Vurma (hit) sesi: daha sert ve dolgun — düşük darbe + geniş bantlı gürültü çatırtısı. */
 export function playHitSound(): void {
-  tone(160, 0.16, 'sawtooth', 0, 0.18);
-  noiseBurst(0.08, 0.015, 0.15);
+  filteredNoise(0.09, { frequency: 650, type: 'bandpass', q: 0.7, startTime: 0, peakGain: 0.28 });
+  filteredNoise(0.04, { frequency: 3200, type: 'highpass', q: 0.5, startTime: 0.01, peakGain: 0.12 });
+  thump(140, 0.14, 0.01, 0.24);
 }
 
-/** Pul çıkarma (bear off) sesi — kısa, yükselen iki nota. */
+/** Pul çıkarma (bear off) sesi: hafif, yükselen iki nota — küçük bir başarı hissi. */
 export function playBearOffSound(): void {
-  tone(660, 0.09, 'sine', 0, 0.12);
-  tone(880, 0.1, 'sine', 0.09, 0.12);
+  const c = getCtx();
+  if (!c || !enabled) return;
+  [660, 880].forEach((freq, i) => {
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = 'sine';
+    const t0 = c.currentTime + i * 0.09;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.12, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    osc.connect(gain);
+    gain.connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.14);
+  });
 }
 
-/** Buton/seçim tıklama sesi (hafif geri bildirim). */
+/** Buton/seçim tıklama sesi — çok kısa, yumuşak bir "tık". */
 export function playClickSound(): void {
-  tone(700, 0.035, 'square', 0, 0.045);
+  filteredNoise(0.02, { frequency: 1800, type: 'bandpass', q: 1.5, startTime: 0, peakGain: 0.1 });
 }
 
 /** Oyun/maç kazanma anı için küçük bir fanfar. */
 export function playWinSound(): void {
-  tone(523, 0.1, 'triangle', 0, 0.12);
-  tone(659, 0.1, 'triangle', 0.1, 0.12);
-  tone(784, 0.16, 'triangle', 0.2, 0.14);
+  const c = getCtx();
+  if (!c || !enabled) return;
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((freq, i) => {
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = 'triangle';
+    const t0 = c.currentTime + i * 0.1;
+    const dur = i === notes.length - 1 ? 0.22 : 0.11;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.14, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain);
+    gain.connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  });
 }

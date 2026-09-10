@@ -29,6 +29,9 @@ interface AppState {
   comboMoves: ComboMove[];
   selectedPoint: number | null; // seçilen kaynak (abs index, veya -1 bar)
   chat: ChatMessage[];
+  chatOpen: boolean;
+  unreadChatCount: number;
+  chatPreview: (ChatMessage & { key: number }) | null;
   notice: string | null;
   opponentDisconnected: boolean;
   errorMessage: string | null;
@@ -48,6 +51,7 @@ interface AppState {
   }) => void;
   selectPoint: (p: number | null) => void;
   pushChat: (m: ChatMessage) => void;
+  setChatOpen: (open: boolean) => void;
   setNotice: (n: string | null) => void;
   setOpponentDisconnected: (v: boolean) => void;
   setError: (m: string | null) => void;
@@ -69,6 +73,9 @@ export const useAppStore = create<AppState>((set) => ({
   comboMoves: [],
   selectedPoint: null,
   chat: [],
+  chatOpen: false,
+  unreadChatCount: 0,
+  chatPreview: null,
   notice: null,
   opponentDisconnected: false,
   errorMessage: null,
@@ -83,7 +90,14 @@ export const useAppStore = create<AppState>((set) => ({
   applyStateUpdate: ({ match, pip, legalMoves, comboMoves, players }) =>
     set({ match, pip, legalMoves, comboMoves, players, screen: 'game', selectedPoint: null }),
   selectPoint: (selectedPoint) => set({ selectedPoint }),
-  pushChat: (m) => set((s) => ({ chat: [...s.chat.slice(-49), m] })),
+  pushChat: (m) =>
+    set((s) => ({
+      chat: [...s.chat.slice(-49), m],
+      // Sohbet kutusu kapalıyken gelen mesaj: okunmamış sayacı artır + kısa bir önizleme göster.
+      unreadChatCount: s.chatOpen ? s.unreadChatCount : s.unreadChatCount + 1,
+      chatPreview: s.chatOpen ? s.chatPreview : { ...m, key: Date.now() + Math.random() },
+    })),
+  setChatOpen: (chatOpen) => set({ chatOpen, unreadChatCount: 0 }),
   setNotice: (notice) => set({ notice }),
   setOpponentDisconnected: (opponentDisconnected) => set({ opponentDisconnected }),
   setError: (errorMessage) => set({ errorMessage }),
@@ -100,6 +114,9 @@ export const useAppStore = create<AppState>((set) => ({
       comboMoves: [],
       selectedPoint: null,
       chat: [],
+      chatOpen: false,
+      unreadChatCount: 0,
+      chatPreview: null,
       notice: null,
       opponentDisconnected: false,
       errorMessage: null,

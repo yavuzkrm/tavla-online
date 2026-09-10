@@ -588,6 +588,53 @@ html, body, #root {
   color: var(--cream);
   font-size: 1.1rem;
   cursor: pointer;
+  position: relative;
+}
+
+.control-btn-chat {
+  overflow: visible;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #e04c42;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.chat-preview-toast {
+  position: fixed;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 320px;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  z-index: 22;
+  animation: chatToast 3s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes chatToast {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(0); }
 }
 
 .emoji-picker {

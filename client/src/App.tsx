@@ -170,6 +170,12 @@ export function App() {
         </div>
       )}
 
+      {store.chatPreview && !store.chatOpen && (
+        <div key={store.chatPreview.key} className="chat-preview-toast">
+          <b>{store.chatPreview.name}:</b> {store.chatPreview.text}
+        </div>
+      )}
+
       <Board />
       <ControlBar />
       <GameOverBanner />
