@@ -82,20 +82,52 @@ html, body, #root {
   border: 1px solid var(--gold);
 }
 
-.btn-length {
-  background: var(--wood-mid);
-  color: var(--cream);
-  border: 2px solid var(--gold);
-  padding: 14px 22px;
-  border-radius: 12px;
-  font-size: 1.1rem;
+.length-stepper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.length-buttons {
+.stepper-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: var(--wood-mid);
+  color: var(--cream);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.length-value {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+}
+
+.length-number {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.length-label {
+  font-size: 0.85rem;
+  color: var(--cream);
+  opacity: 0.8;
+}
+
+.length-hint {
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 
 .room-code {
@@ -173,6 +205,18 @@ html, body, #root {
   .checker {
     width: 30px;
     height: 30px;
+  }
+
+  .bear-off-tray {
+    width: 34px;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tray-checker {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
   }
 
   .player-card {
@@ -285,6 +329,18 @@ html, body, #root {
 @keyframes pop {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Bildirim/uyarı alanı: içindeki banner'lar (bağlantı koptu, hamle yok vb.)
+   görünüp kaybolunca sabit bir yükseklik korunur — yoksa tahta her seferinde
+   yukarı/aşağı kayıyormuş gibi görünüyordu. */
+.alerts-area {
+  min-height: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
 }
 
 .notice-banner, .reconnect-banner {
@@ -493,13 +549,13 @@ html, body, #root {
 /* ---------- Pul toplama köşesi (bear-off tray) ---------- */
 
 .bear-off-tray {
-  width: 34px;
+  width: 22px;
   background: var(--panel);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px;
+  gap: 3px;
+  padding: 2px;
   min-height: 0;
 }
 
@@ -513,13 +569,13 @@ html, body, #root {
 }
 
 .tray-checker {
-  width: 24px;
-  height: 24px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: bold;
 }
 
@@ -555,6 +611,12 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  /* Zar At / Geri Al butonları görünüp kaybolunca bu alanın yüksekliği
+     DEĞİŞMESİN diye sabit bir min-height veriyoruz — yoksa flex:1 olan
+     tahta, kalan alana göre her seferinde küçülüp büyüyerek "oynuyor"muş
+     gibi görünüyordu. */
+  min-height: 46px;
+  flex: none;
 }
 
 .pip-box {

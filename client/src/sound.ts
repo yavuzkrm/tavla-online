@@ -83,22 +83,41 @@ function filteredNoise(
   src.start(t0);
 }
 
-/** Zar sesi: birkaç düzensiz "takırtı" (zarın tahtaya çarpıp sekmesi) + son bir
- * alçak "toc" (zarın yere/tahtaya oturması). Her takırtının frekansı hafifçe
- * farklı seçiliyor ki mekanik/tekrarlı değil, doğal/rastgele hissettirsin. */
+/** Zar sesi: önce zarların birbirine/kaba hızlıca çarptığı yoğun bir "çalkalama"
+ * dokusu, ardından tahtaya düşüp SEKEREK yavaşlayan birkaç vuruş — her sekme
+ * bir öncekinden daha alçak sesli ve daha yakın aralıklı (gerçek bir topun
+ * sekip durması gibi). Bu, önceki eşit-aralıklı takırtılardan çok daha
+ * inandırıcı bir "zar atıldı" hissi veriyor. */
 export function playDiceSound(): void {
-  const knockTimes = [0, 0.055, 0.11, 0.165, 0.21];
-  const freqs = [2400, 1900, 2600, 1700, 2100];
-  knockTimes.forEach((t, i) => {
-    filteredNoise(0.035 + Math.random() * 0.01, {
-      frequency: freqs[i] + (Math.random() * 200 - 100),
-      type: 'bandpass',
-      q: 0.6 + Math.random() * 0.4,
+  // 1) Çalkalama: 7-8 tane çok kısa, yüksek frekanslı, sık aralıklı tıkırtı.
+  for (let i = 0; i < 8; i++) {
+    const t = i * (0.011 + Math.random() * 0.009);
+    filteredNoise(0.012 + Math.random() * 0.006, {
+      frequency: 3200 + Math.random() * 1800,
+      type: 'highpass',
+      q: 0.6,
       startTime: t,
-      peakGain: 0.16 + Math.random() * 0.06,
+      peakGain: 0.08 + Math.random() * 0.05,
     });
-  });
-  thump(150, 0.11, 0.23, 0.16);
+  }
+
+  // 2) Tahtaya düşüp sekme: genlik ve aralık her sekmede küçülüyor.
+  let t = 0.15;
+  let gain = 0.3;
+  let interval = 0.075;
+  for (let bounce = 0; bounce < 5; bounce++) {
+    filteredNoise(0.035, {
+      frequency: 1100 + Math.random() * 500,
+      type: 'bandpass',
+      q: 0.7 + Math.random() * 0.3,
+      startTime: t,
+      peakGain: gain,
+    });
+    thump(120 + Math.random() * 50, 0.06, t, gain * 0.65);
+    t += interval;
+    gain *= 0.55;
+    interval *= 0.6;
+  }
 }
 
 /** Pul (taş) hareket sesi: kısa, tok bir "tak" — filtrelenmiş gürültü + hafif alçak darbe. */

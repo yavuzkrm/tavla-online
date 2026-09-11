@@ -148,7 +148,7 @@ io.on('connection', (socket: Socket) => {
       const room = getRoom(roomId);
       if (!room) return;
       if (room.hostPlayerId !== playerId) return; // sadece host seçebilir
-      if (![3, 5, 7, 9, 11].includes(length)) return;
+      if (!Number.isInteger(length) || length < 3 || length > 25 || length % 2 === 0) return;
       if (room.players.length < 2) return;
       startMatch(room, length, randomIntSecure);
       io.to(roomId).emit('match_started', { matchLength: length });

@@ -156,13 +156,15 @@ export function App() {
       </div>
 
       <div className="player-cards-row">
-        <PlayerCard color="white" align="left" />
-        <PlayerCard color="black" align="right" />
+        <PlayerCard color={store.myColor ?? 'white'} align="left" />
+        <PlayerCard color={store.myColor === 'white' ? 'black' : 'white'} align="right" />
       </div>
 
-      {store.opponentDisconnected && <div className="reconnect-banner">Rakip bağlantısı koptu, yeniden bağlanması bekleniyor…</div>}
-      {store.notice && <div className="notice-banner">{store.notice}</div>}
-      {store.match?.game.noMovesNotice && <div className="notice-banner">Hamle yok, sıra rakibe geçti.</div>}
+      <div className="alerts-area">
+        {store.opponentDisconnected && <div className="reconnect-banner">Rakip bağlantısı koptu, yeniden bağlanması bekleniyor…</div>}
+        {store.notice && <div className="notice-banner">{store.notice}</div>}
+        {store.match?.game.noMovesNotice && <div className="notice-banner">Hamle yok, sıra rakibe geçti.</div>}
+      </div>
 
       {store.emojiReaction && (
         <div key={store.emojiReaction.key} className={`emoji-float emoji-float-${store.emojiReaction.color}`}>
