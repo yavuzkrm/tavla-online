@@ -28,7 +28,7 @@ export function toAbsoluteIndex(relativePoint: number, color: PlayerColor): numb
 // Başlangıç durumu
 // ---------------------------------------------------------------------------
 
-export function createInitialGameState(startingPlayer: PlayerColor, openingDice: number[]): GameState {
+export function createInitialGameState(startingPlayer: PlayerColor, openingDice: number[] | null): GameState {
   const points: BoardPoint[] = Array.from({ length: 24 }, () => ({ color: null, count: 0 }));
 
   const place = (relPoint: number, color: PlayerColor, count: number) => {
@@ -50,7 +50,7 @@ export function createInitialGameState(startingPlayer: PlayerColor, openingDice:
     bar: { white: 0, black: 0 },
     borneOff: { white: 0, black: 0 },
     turn: startingPlayer,
-    dice: [...openingDice],
+    dice: openingDice ? [...openingDice] : null,
     movesThisTurn: [],
     gameOver: false,
     winner: null,
@@ -448,10 +448,16 @@ export function endTurn(state: GameState): GameState {
   return next;
 }
 
-/** Yeni bir oyun (game) başlatır: tahta sıfırlanır, açılış zarı ile devam eder. Maç skoru KORUNUR (server tutar). */
-export function startNewGame(rand: RandomIntFn): GameState {
-  const { starter, dice } = rollOpening(rand);
-  return createInitialGameState(starter, dice);
+/**
+ * Yeni bir oyun (game) başlatır: tahta sıfırlanır. Maç skoru KORUNUR (server tutar).
+ * - starter verilmezse (maçın ilk oyunu): açılış zarı atılır, büyük atan başlar.
+ * - starter verilirse (önceki oyunu kazanan): o oyuncu başlar, açılış zarı ATILMAZ;
+ *   dice=null olur ve oyuncu normal şekilde "Zar At" ile kendi zarını atar.
+ */
+export function startNewGame(rand: RandomIntFn, starter?: PlayerColor): GameState {
+  if (starter) return createInitialGameState(starter, null);
+  const { starter: openingStarter, dice } = rollOpening(rand);
+  return createInitialGameState(openingStarter, dice);
 }
 
 /** Toplam pip mesafesi: bar'daki her pul 25 pip, tahtadaki her pul kendi göreceli numarası kadar pip. */

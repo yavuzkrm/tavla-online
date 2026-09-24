@@ -88,7 +88,47 @@ function filteredNoise(
  * bir öncekinden daha alçak sesli ve daha yakın aralıklı (gerçek bir topun
  * sekip durması gibi). Bu, önceki eşit-aralıklı takırtılardan çok daha
  * inandırıcı bir "zar atıldı" hissi veriyor. */
+// ---------------------------------------------------------------------------
+// Dosyadan zar sesi
+// ---------------------------------------------------------------------------
+// client/public/sounds/dice.mp3 dosyası varsa zar sesi olarak O çalınır.
+// Vite, public/ klasörünü sitenin köküne kopyalar; bu yüzden yol "/sounds/dice.mp3".
+// Dosya yoksa veya yüklenemezse aşağıdaki sentetik ses (yedek) kullanılır.
+const DICE_SOUND_URL = '/sounds/dice.mp3';
+let diceAudio: HTMLAudioElement | null = null;
+let diceFileFailed = false;
+
+function getDiceAudio(): HTMLAudioElement | null {
+  if (typeof window === 'undefined' || diceFileFailed) return null;
+  if (!diceAudio) {
+    diceAudio = new Audio(DICE_SOUND_URL);
+    diceAudio.preload = 'auto';
+    diceAudio.addEventListener('error', () => {
+      diceFileFailed = true;
+    });
+  }
+  return diceAudio;
+}
+
+// Sayfa açılır açılmaz dosyayı önceden yükle ki ilk zarda gecikme olmasın.
+getDiceAudio();
+
 export function playDiceSound(): void {
+  if (!enabled) return;
+  const audio = getDiceAudio();
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      // Dosya bulunamadı / tarayıcı engelledi -> sentetik sese düş.
+      diceFileFailed = true;
+      playSyntheticDiceSound();
+    });
+    return;
+  }
+  playSyntheticDiceSound();
+}
+
+function playSyntheticDiceSound(): void {
   // 1) Çalkalama: 7-8 tane çok kısa, yüksek frekanslı, sık aralıklı tıkırtı.
   for (let i = 0; i < 8; i++) {
     const t = i * (0.011 + Math.random() * 0.009);

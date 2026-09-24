@@ -12,6 +12,7 @@ import {
   toAbsoluteIndex,
   toPlayerRelativePoint,
   hasNoPlayableMoves,
+  startNewGame,
 } from './gameEngine';
 import { GameState, PlayerColor } from './types';
 
@@ -225,5 +226,19 @@ describe('mars kuralı', () => {
     expect(next.gameOver).toBe(true);
     expect(next.winner).toBe('white');
     expect(next.isMarsWin).toBe(true);
+  });
+
+  it('ilk oyunda açılış zarı atılır; sonraki oyunda önceki kazanan zarsız başlar', () => {
+    // Deterministik RNG: sırayla 5, 2 döner -> beyaz 5, siyah 2 -> beyaz başlar.
+    const seq = [5, 2];
+    let i = 0;
+    const rand = () => seq[i++ % seq.length];
+    const first = startNewGame(rand);
+    expect(first.turn).toBe('white');
+    expect(first.dice).toEqual([5, 2]);
+
+    const next = startNewGame(rand, 'black');
+    expect(next.turn).toBe('black');
+    expect(next.dice).toBeNull();
   });
 });

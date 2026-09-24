@@ -533,17 +533,30 @@ html, body, #root {
   height: 22px;
   background: #fdfdfd;
   border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.75rem;
+  box-sizing: border-box;
+  padding: 3px;
+  /* Noktalar 3x3 ızgaraya yerleşiyor (bkz. Board.tsx PIP_LAYOUT) */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
   color: #a01818;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.4);
 }
 
 .die-black {
   color: #16227a;
+}
+
+.die .pip {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.die .pip-empty {
+  background: transparent;
 }
 
 /* ---------- Pul toplama köşesi (bear-off tray) ---------- */

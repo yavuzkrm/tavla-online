@@ -105,7 +105,8 @@ function finishMoveApplication(room: Room, slot: { color: PlayerColor }, nextGam
       room.match.matchOver = true;
       room.match.matchWinner = winner;
     } else {
-      nextGame = startNewGame(randomIntSecure);
+      // Sayıyı alan oyuncu bir sonraki oyuna başlar; açılış zarı tekrar atılmaz.
+      nextGame = startNewGame(randomIntSecure, winner);
     }
   }
 

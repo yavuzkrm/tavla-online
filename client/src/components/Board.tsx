@@ -224,9 +224,31 @@ function DiceInBar() {
   return (
     <div className="dice-area">
       {dice.map((d, i) => (
-        <div key={i} className={`die die-${myColor}`}>
-          {d}
-        </div>
+        <DieFace key={i} value={d} color={myColor} />
+      ))}
+    </div>
+  );
+}
+
+// Gerçek bir zardaki nokta dizilimi: 3x3 ızgarada hangi hücrelerin dolu olduğu.
+// Hücre numaraları:  0 1 2
+//                    3 4 5
+//                    6 7 8
+const PIP_LAYOUT: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+function DieFace({ value, color }: { value: number; color: string | null }) {
+  const filled = PIP_LAYOUT[value] ?? [];
+  return (
+    <div className={`die die-${color}`} role="img" aria-label={`Zar: ${value}`}>
+      {Array.from({ length: 9 }, (_, cell) => (
+        <span key={cell} className={filled.includes(cell) ? 'pip' : 'pip pip-empty'} />
       ))}
     </div>
   );
