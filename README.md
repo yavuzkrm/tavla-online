@@ -1,74 +1,74 @@
 # Tavla Online
 
-İki kişinin tarayıcıdan, bir oda koduyla eşleşip klasik (düz) tavla oynayabildiği gerçek zamanlı bir web uygulaması. Hesap açmak gerekmiyor: biri oda kuruyor, diğeri 6 haneli kodu girip katılıyor.
+A real-time web app for playing classic Turkish backgammon (*tavla*) with a friend in the browser. There are no accounts: one player creates a room and the other joins with a 6-character code.
 
-> **Not:** Bu projeyi Claude (Anthropic) ile birlikte, ne istediğimi anlatarak geliştirdim. Kodu satır satır ben yazmadım. Kural motorunu testlerle doğruladım ve aşağıdaki mimariyi anlatabilecek kadar inceledim.
+> **Note:** This project was built with an AI coding assistant by describing what I wanted, not written line by line by hand. I verified the rules engine with tests and went through the architecture described below. The game's interface is in Turkish.
 
-## Özellikler
+## Features
 
-- Oda kodu ile eşleşme (karışabilecek `0/O`, `1/I` gibi karakterler kodlarda kullanılmıyor)
-- 3, 5, 7, 9 veya 11 puanlık maç seçimi, mars kuralı
-- Kırık taşın bara gitmesi, bardan giriş, toplama ve çift zar dahil tüm klasik kurallar
-- **Zorunlu maksimum oynama:** oynanabilecek en fazla zarı oynatmayan hamlelere izin verilmiyor
-- Oynanabilecek hamle yoksa sıra otomatik geçiyor
-- Hamle geri alma, sohbet, emoji gönderme, rövanş teklifi
-- Bağlantı koparsa 30 saniye içinde aynı oyuna geri dönme (sayfa yenilense bile)
-- Zar, taş ve kırma için ses efektleri
+- Room codes for matchmaking (characters that are easy to confuse, like `0/O` and `1/I`, are left out)
+- Matches to 3, 5, 7, 9 or 11 points, with gammons (*mars*) counted
+- All the classic rules: hitting to the bar, entering from the bar, bearing off and doubles
+- **Forced maximum play:** moves that don't use as many dice as possible are not allowed
+- The turn passes automatically when there is no legal move
+- Undo, chat, emoji reactions and rematch offers
+- Rejoin the same game within 30 seconds if the connection drops, even after a page refresh
+- Sound effects for dice, moves and hits
 
-## Mimari
+## Architecture
 
 ```
-server/   Node.js + TypeScript + Socket.IO   ->  oyunun tüm mantığı burada
-client/   React + TypeScript + Vite + Zustand ->  sadece çizim ve kullanıcı girdisi
+server/   Node.js + TypeScript + Socket.IO   ->  all game logic runs here
+client/   React + TypeScript + Vite + Zustand ->  rendering and user input only
 ```
 
-Oyunun doğruluğu sunucuda sağlanıyor. İstemci, sunucudan gelen `legalMoves` listesi dışında bir hamle gönderemiyor. Sunucu da gelen her hamleyi tekrar doğruluyor, yani tarayıcıdan hile yapılamıyor. Zarlar `crypto.randomInt` ile sunucuda atılıyor.
+The server enforces the rules. The client can only send a move from the `legalMoves` list the server sends, and the server checks every incoming move again, so a player can't cheat from the browser. Dice are rolled on the server with `crypto.randomInt`.
 
-| Dosya | İçerik |
+| File | Contents |
 |---|---|
-| `server/src/gameEngine.ts` | Saf fonksiyonlardan oluşan kural motoru: hamle üretimi, bar ve toplama kuralları, mars, pip sayısı |
-| `server/src/gameEngine.test.ts` | Kural motorunun testleri (22 test, vitest) |
-| `server/src/roomManager.ts` | Oda kodu üretimi ve oda durumunun bellekte tutulması |
-| `server/src/index.ts` | Socket.IO olayları: zar atma, hamle, geri alma, sohbet, rövanş, yeniden bağlanma |
-| `client/src/components/Board.tsx` | Tahta ve tıkla-taşı arayüzü |
-| `client/src/sound.ts` | Ses efektleri (zar sesi dosyadan, diğerleri Web Audio API ile üretiliyor) |
+| `server/src/gameEngine.ts` | Rules engine made of pure functions: move generation, bar and bear-off rules, gammons, pip count |
+| `server/src/gameEngine.test.ts` | Tests for the rules engine (22 tests, vitest) |
+| `server/src/roomManager.ts` | Room code generation and in-memory room state |
+| `server/src/index.ts` | Socket.IO events: rolling, moving, undo, chat, rematch, reconnecting |
+| `client/src/components/Board.tsx` | Board and click-to-move interface |
+| `client/src/sound.ts` | Sound effects (dice sound from a file, the rest generated with the Web Audio API) |
 
-Zorunlu maksimum oynama kuralı en uğraştırıcı kısımdı. `getMaxPlayableDiceSequence`, olası tüm hamle dizilerini DFS ile tarayıp en uzun diziyi buluyor. `getLegalMovesNow` da yalnızca bu dizilerin ilk adımlarına izin veriyor.
+The forced maximum play rule was the trickiest part. `getMaxPlayableDiceSequence` searches all possible move sequences with DFS to find the longest one. `getLegalMovesNow` then allows only the first steps of those sequences.
 
-## Çalıştırma
+## Running locally
 
-Node.js 18+ gerekiyor.
+Requires Node.js 18+.
 
 ```bash
-# Sunucu (http://localhost:4000)
+# Server (http://localhost:4000)
 cd server
 npm install
 npm run dev
-npm test        # kural motoru testleri
+npm test        # rules engine tests
 
-# İstemci (http://localhost:5173), ayrı bir terminalde
+# Client (http://localhost:5173), in a second terminal
 cd client
 npm install
 npm run dev
 ```
 
-İstemci varsayılan olarak `http://localhost:4000` adresine bağlanıyor. Başka bir sunucu için `client/.env` dosyasına şunu ekle:
+By default the client connects to `http://localhost:4000`. To use a different server, create `client/.env`:
 
 ```
-VITE_SERVER_URL=http://sunucu-adresi:4000
+VITE_SERVER_URL=http://your-server:4000
 ```
 
-Denemek için `localhost:5173`'ü iki ayrı sekmede aç. Birinde oda kur, diğerinde o kodla katıl.
+To try it, open `localhost:5173` in two tabs, create a room in one and join with the code in the other.
 
-## Eksikler
+## Limitations
 
-- Taşlar sürükle-bırak ile değil, tıklayarak oynanıyor.
-- Odalar sunucunun belleğinde tutuluyor. Sunucu yeniden başlarsa devam eden oyunlar ve skorlar siliniyor.
+- Pieces are moved by clicking, not by drag and drop.
+- Rooms live in server memory, so restarting the server ends running games and resets scores.
 
-## Yayına alma
+## Deployment
 
-Her iki klasörde de Railway için `railway.toml` var. Sunucu tarafında `npm run build && npm start` yeterli. İstemcide `npm run build` ile oluşan `dist/` klasörü herhangi bir statik barındırmaya konabilir. Bu durumda `VITE_SERVER_URL` değişkeni sunucunun adresine ayarlanmalı.
+Both folders include a `railway.toml` for Railway. The server runs with `npm run build && npm start`. The client's `npm run build` output (`dist/`) can go on any static host, with `VITE_SERVER_URL` set to the server's address.
 
-## Lisans
+## License
 
 MIT
