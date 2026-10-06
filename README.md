@@ -1,119 +1,74 @@
-# Tavla — Online 2 Kişilik Klasik (Düz) Tavla
+# Tavla Online
 
-Gerçek zamanlı, sadece **oda kodu** ile eşleşen, klasik tavla kurallarına (mars +
-seçilebilir 3/5/7/9/11 puanlık maç) uyan iki kişilik web uygulaması.
+İki kişinin tarayıcıdan, bir oda koduyla eşleşip klasik (düz) tavla oynayabildiği gerçek zamanlı bir web uygulaması. Hesap açmak gerekmiyor: biri oda kuruyor, diğeri 6 haneli kodu girip katılıyor.
 
-## ⚠️ Şeffaflık Notu — Bu Bir "Vibe Coding" Projesidir
+> **Not:** Bu projeyi Claude (Anthropic) ile birlikte, ne istediğimi anlatarak geliştirdim. Kodu satır satır ben yazmadım. Kural motorunu testlerle doğruladım ve aşağıdaki mimariyi anlatabilecek kadar inceledim.
 
-Bu projenin kodu **Claude (Anthropic)** ile birlikte, doğal dilde verilen bir
-spesifikasyondan üretildi — satır satır elle yazılmadı. Kural motoru (`gameEngine.ts`)
-üretilirken tanımlanan tüm kurallara karşı **17 unit testle** doğrulandı ve
-hem sunucu hem istemci hatasız derleniyor, ancak:
+## Özellikler
 
-- Kodun büyük kısmı **detaylıca incelenmedi/refactor edilmedi**; production kalitesinde
-  bir kod review'dan geçmedi.
-- Amaç bir teknoloji denemesi / prototip / CV'ye eklenecek bir referans projesi —
-  "ben bunu satır satır yazdım" iddiası değil.
-- Repoyu inceleyen biri (örn. bir mülakatta) kodun nasıl çalıştığını sorarsa,
-  mimari kararları (oda kodu akışı, sunucu-taraflı kural doğrulama, forced-maximal-play
-  mantığı vb.) açıklayabilecek kadar anladığımdan emin olmam gerekiyor — bu README'nin
-  "Kuralların Uygulanışı" bölümü bu yüzden var.
+- Oda kodu ile eşleşme (karışabilecek `0/O`, `1/I` gibi karakterler kodlarda kullanılmıyor)
+- 3, 5, 7, 9 veya 11 puanlık maç seçimi, mars kuralı
+- Kırık taşın bara gitmesi, bardan giriş, toplama ve çift zar dahil tüm klasik kurallar
+- **Zorunlu maksimum oynama:** oynanabilecek en fazla zarı oynatmayan hamlelere izin verilmiyor
+- Oynanabilecek hamle yoksa sıra otomatik geçiyor
+- Hamle geri alma, sohbet, emoji gönderme, rövanş teklifi
+- Bağlantı koparsa 30 saniye içinde aynı oyuna geri dönme (sayfa yenilense bile)
+- Zar, taş ve kırma için ses efektleri
 
-Bunu gizlemek yerine açıkça belirtmeyi tercih ettim.
-
-## Klasör Yapısı
+## Mimari
 
 ```
-tavla/
-  server/   Node.js + TypeScript + Socket.IO — TÜM oyun mantığı burada çalışır
-  client/   React + TypeScript + Vite + Zustand — sadece görselleştirme/girdi
+server/   Node.js + TypeScript + Socket.IO   ->  oyunun tüm mantığı burada
+client/   React + TypeScript + Vite + Zustand ->  sadece çizim ve kullanıcı girdisi
 ```
 
-## Nasıl Çalıştırılır
+Oyunun doğruluğu sunucuda sağlanıyor. İstemci, sunucudan gelen `legalMoves` listesi dışında bir hamle gönderemiyor. Sunucu da gelen her hamleyi tekrar doğruluyor, yani tarayıcıdan hile yapılamıyor. Zarlar `crypto.randomInt` ile sunucuda atılıyor.
 
-### 1) Sunucu
+| Dosya | İçerik |
+|---|---|
+| `server/src/gameEngine.ts` | Saf fonksiyonlardan oluşan kural motoru: hamle üretimi, bar ve toplama kuralları, mars, pip sayısı |
+| `server/src/gameEngine.test.ts` | Kural motorunun testleri (22 test, vitest) |
+| `server/src/roomManager.ts` | Oda kodu üretimi ve oda durumunun bellekte tutulması |
+| `server/src/index.ts` | Socket.IO olayları: zar atma, hamle, geri alma, sohbet, rövanş, yeniden bağlanma |
+| `client/src/components/Board.tsx` | Tahta ve tıkla-taşı arayüzü |
+| `client/src/sound.ts` | Ses efektleri (zar sesi dosyadan, diğerleri Web Audio API ile üretiliyor) |
+
+Zorunlu maksimum oynama kuralı en uğraştırıcı kısımdı. `getMaxPlayableDiceSequence`, olası tüm hamle dizilerini DFS ile tarayıp en uzun diziyi buluyor. `getLegalMovesNow` da yalnızca bu dizilerin ilk adımlarına izin veriyor.
+
+## Çalıştırma
+
+Node.js 18+ gerekiyor.
 
 ```bash
+# Sunucu (http://localhost:4000)
 cd server
 npm install
-npm run dev        # http://localhost:4000 üzerinde Socket.IO sunucusu başlar
-```
+npm run dev
+npm test        # kural motoru testleri
 
-Kural motorunun testlerini çalıştırmak için:
-
-```bash
-npm test           # vitest — bar girişi, bearing-off, çift zar, mars vb. testleri
-```
-
-### 2) İstemci
-
-Başka bir terminalde:
-
-```bash
+# İstemci (http://localhost:5173), ayrı bir terminalde
 cd client
 npm install
-npm run dev         # http://localhost:5173 açılır
+npm run dev
 ```
 
-Varsayılan olarak istemci `http://localhost:4000` adresindeki sunucuya bağlanır.
-Farklı bir adres kullanmak için `client/.env` dosyasına:
+İstemci varsayılan olarak `http://localhost:4000` adresine bağlanıyor. Başka bir sunucu için `client/.env` dosyasına şunu ekle:
 
 ```
-VITE_SERVER_URL=http://SUNUCU_ADRESIN:4000
+VITE_SERVER_URL=http://sunucu-adresi:4000
 ```
 
-### 3) İki oyuncuyla test
+Denemek için `localhost:5173`'ü iki ayrı sekmede aç. Birinde oda kur, diğerinde o kodla katıl.
 
-`http://localhost:5173`'ü iki farklı sekmede/tarayıcıda açın. Birinde "Oda Kur",
-diğerinde çıkan kodu "Odaya Katıl" ekranına girin.
+## Eksikler
 
-## Kuralların Uygulanışı — Nerede Ne Var
+- Taşlar sürükle-bırak ile değil, tıklayarak oynanıyor.
+- Odalar sunucunun belleğinde tutuluyor. Sunucu yeniden başlarsa devam eden oyunlar ve skorlar siliniyor.
 
-- **Kural motoru (saf fonksiyonlar):** `server/src/gameEngine.ts`
-  - Mutlak/göreceli nokta dönüşümü: `toPlayerRelativePoint` / `toAbsoluteIndex`
-  - Tek zar hamle üretimi (blok, vurma, bar girişi, bearing-off eşik + overage): `getSingleDieMoves`
-  - **Forced maximal play** (mümkün olan maksimum zar sayısını oynama zorunluluğu):
-    `getMaxPlayableDiceSequence` + `getLegalMovesNow` — tüm olası hamle dizilerini
-    DFS ile tarar, en uzun diziyi bulur, sadece o dizilerin ilk adımlarına izin verir.
-  - **Mars kuralı:** `isMars` — kaybedenin `borneOff === 0` olup olmadığını kontrol eder;
-    `applyMove` oyunu bitiren hamlede otomatik olarak `isMarsWin` alanını doldurur.
-  - Pip count: `getPipCount`.
-- **Oda/maç yönetimi:** `server/src/roomManager.ts` (in-memory `Map<roomId, Room>`,
-  6 karakterli, karışabilecek karakterler (0/O, 1/I) hariç tutulmuş oda kodları).
-- **Socket.IO olayları ve maç akışı:** `server/src/index.ts` — zar atma (kriptografik
-  RNG, `crypto.randomInt`), hamle doğrulama, otomatik pas geçme senaryoları
-  (3.3'teki TÜM senaryolar dahil), oyun/maç bitişi, otomatik yeni oyun başlatma,
-  tekrar oyna teklifi, 30 saniyelik yeniden bağlanma toleransı.
-- **İstemci:** `client/src/components/Board.tsx` tıkla-taşı arayüzü; sunucudan gelen
-  `legalMoves` listesi dışında hiçbir hamle gönderilemez (hile istemciden yapılamaz —
-  sunucu her hamleyi `isMoveCurrentlyLegal` ile yeniden doğrular).
+## Yayına alma
 
-## Bilinçli Olarak Basitleştirilmiş / Eksik Bırakılan Kısımlar
+Her iki klasörde de Railway için `railway.toml` var. Sunucu tarafında `npm run build && npm start` yeterli. İstemcide `npm run build` ile oluşan `dist/` klasörü herhangi bir statik barındırmaya konabilir. Bu durumda `VITE_SERVER_URL` değişkeni sunucunun adresine ayarlanmalı.
 
-Bu teslim çalışan, kuralca doğru bir iskelet + tam bir kural motorudur, ancak
-zaman/verilen kapsam nedeniyle şu "ek/opsiyonel" (spesifikasyonun 7. bölümü,
-zorunlu değil) kısımlar sadece temel/stub seviyesinde bırakıldı:
+## Lisans
 
-- **Sesler:** Kontrol çubuğunda ses aç/kapa butonu var ama gerçek ses dosyaları
-  eklenmedi (`ControlBar.tsx` içine `<audio>` eklemek yeterli olur).
-- **Sürükle-bırak:** Hamleler şu an tıkla-seç / tıkla-taşı ile yapılıyor
-  (spesifikasyondaki hem tıklama hem sürükle-bırak seçeneklerinden biri).
-- **Görsel cila:** Zar atma animasyonu, pul sıçrama efekti, tahta dokusu görseldeki
-  kadar detaylı değil — CSS ile temel bir ahşap tema uygulandı, ince ayar gerekir.
-- **Kalıcı istatistik:** Oyun geçmişi / toplam galibiyet sayacı eklenmedi (in-memory
-  `Room` state'i process yeniden başlayınca sıfırlanır; kalıcılık için Redis/DB eklenebilir).
-- **Otomatik "rejoin" tetikleyici:** Sunucu tarafı reconnect mantığı (30 sn tolerans)
-  tam çalışır; istemci tarafında sayfa yenilenince otomatik `rejoin_room` çağrısı
-  şu an tetiklenmiyor (roomId + playerId'yi localStorage'a yazıp `useEffect` içinde
-  `rejoin_room` emit etmek yeterli olur).
-
-Tüm ZORUNLU kural maddeleri (3.1–3.9), oda kodu akışı (5. bölüm) ve maç
-uzunluğu/mars sistemi tam olarak, testlerle doğrulanmış şekilde uygulandı.
-
-## Canlıya Alma (Deploy)
-
-- `server`: herhangi bir Node.js barındırma (Render, Railway, Fly.io, kendi VPS'iniz)
-  üzerinde `npm run build && npm start`.
-- `client`: `npm run build` ile üretilen `dist/` klasörünü herhangi bir statik
-  barındırmaya (Vercel, Netlify, Cloudflare Pages) koyup `VITE_SERVER_URL`'i
-  gerçek sunucu adresinize göre ayarlayın.
+MIT
