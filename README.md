@@ -2,7 +2,7 @@
 
 A real-time web app for playing classic Turkish backgammon (*tavla*) with a friend in the browser. There are no accounts: one player creates a room and the other joins with a 6-character code.
 
-> **Note:** This project was built with an AI coding assistant by describing what I wanted, not written line by line by hand. I verified the rules engine with tests and went through the architecture described below. The game's interface is in Turkish.
+> **Note:** This project was vibe coded with Claude (Anthropic) in Claude Code: I described what I wanted and the code was generated, not written line by line by hand. I verified the rules engine with tests and went through the architecture described below. The game's interface is in Turkish.
 
 ## Features
 
@@ -71,4 +71,4 @@ Both folders include a `railway.toml` for Railway. The server runs with `npm run
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).
