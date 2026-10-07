@@ -1,0 +1,15 @@
+{
+  "name": "Tavla — Online 2 Kişilik",
+  "short_name": "Tavla",
+  "description": "Çevrimiçi tavla oyunu iki oyuncu için. Zar atın, hamle yapın, rakibinizi yenin.",
+  "lang": "tr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#2a1810",
+  "theme_color": "#d4a94b",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "32x32", "type": "image/x-icon", "purpose": "any" }
+  ]
+}
