@@ -7,6 +7,7 @@ import { MatchLengthPicker } from './components/MatchLengthPicker';
 import { Board } from './components/Board';
 import { PlayerCard } from './components/PlayerCard';
 import { ControlBar } from './components/ControlBar';
+import { SoundToggle } from './components/SoundToggle';
 import { GameOverBanner } from './components/GameOverBanner';
 import { MatchState, StateUpdatePayload } from './types';
 import { playBearOffSound, playDiceSound, playHitSound, playMoveSound, playWinSound } from './sound';
@@ -48,9 +49,13 @@ export function App() {
     // ve Socket.IO otomatik yeniden bağlandı) otomatik olarak o odaya geri
     // katıl. Sunucu, aynı playerId ile gelen bir bağlantıyı zaten var olan
     // oyuncu koltuğuna oturtuyor (roomManager.joinRoom).
+    // Otomatik geri katılma kullanıcının isteği değil: oda artık yoksa (sunucu
+    // yeniden başladı, süresi doldu) hata göstermeden kayıtlı kodu sessizce sil.
+    let autoRejoinPending = false;
     function tryAutoRejoin() {
       const savedRoomId = getSavedRoomId();
       if (savedRoomId) {
+        autoRejoinPending = true;
         socket.emit('rejoin_room', { roomId: savedRoomId, playerId, name: store.playerName });
       }
     }
@@ -64,11 +69,17 @@ export function App() {
     });
 
     socket.on('room_joined', ({ roomId, color }: { roomId: string; color: 'white' | 'black' }) => {
+      autoRejoinPending = false;
       store.setRoomJoined(roomId, color);
       saveRoomId(roomId);
     });
 
     socket.on('join_error', ({ message }: { message: string }) => {
+      if (autoRejoinPending) {
+        autoRejoinPending = false;
+        clearSavedRoomId();
+        return;
+      }
       store.setError(message);
       setTimeout(() => store.setError(null), 4000);
       // Kayıtlı oda artık geçersizse (silinmiş/süresi dolmuş) kullanıcıyı
@@ -150,7 +161,7 @@ export function App() {
   return (
     <div className="game-screen">
       <div className="top-bar">
-        <div className="menu-icon">☰</div>
+        <SoundToggle />
         <div className="top-title">Tavla</div>
         <div className="match-length-badge">{store.match?.matchLength} Puan Maçı</div>
       </div>

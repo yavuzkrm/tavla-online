@@ -13,7 +13,7 @@ A real-time web app for playing classic Turkish backgammon (*tavla*) with a frie
 - The turn passes automatically when there is no legal move
 - Undo, chat, emoji reactions and rematch offers
 - Rejoin the same game within 30 seconds if the connection drops, even after a page refresh
-- Sound effects for dice, moves and hits
+- Sound effects for dice, moves and hits, with a mute button in the top bar
 
 ## Architecture
 
