@@ -694,7 +694,8 @@ html, body, #root {
   top: 96px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: 320px;
+  max-width: min(320px, calc(100vw - 24px));
+  overflow-wrap: anywhere;
   background: var(--panel);
   border: 1px solid var(--gold);
   border-radius: 10px;
@@ -770,6 +771,7 @@ html, body, #root {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 12px;
   font-size: 0.8rem;
   display: flex;
@@ -786,6 +788,13 @@ html, body, #root {
 .chat-input-row .text-input {
   flex: 1;
   width: auto;
+  min-width: 0;
+}
+
+/* Long words or links in a message wrap instead of widening the chat sideways. */
+.chat-msg {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Overlay ---------- */
