@@ -242,6 +242,38 @@ html, body, #root {
     justify-content: center;
   }
 
+  .screen {
+    gap: 24px;
+    padding: 40px;
+    max-width: 500px;
+  }
+
+  .home-screen {
+    gap: 32px;
+  }
+
+  .home-screen .title {
+    font-size: 3.2rem;
+    margin-bottom: 12px;
+  }
+
+  .home-screen .text-input {
+    width: 280px;
+    font-size: 1.05rem;
+    padding: 14px 18px;
+  }
+
+  .home-screen .menu-buttons,
+  .home-screen .join-form {
+    gap: 20px;
+  }
+
+  .home-screen .btn {
+    padding: 14px 28px;
+    font-size: 1.05rem;
+    min-width: 140px;
+  }
+
   .game-screen {
     width: 92vw;
     max-width: 760px;
@@ -286,19 +318,6 @@ html, body, #root {
 
   .player-name {
     font-size: 1rem;
-  }
-
-  .title {
-    font-size: 2.8rem;
-  }
-
-  .screen {
-    gap: 20px;
-    padding: 32px;
-  }
-
-  .text-input {
-    width: 260px;
   }
 }
 
