@@ -6,11 +6,11 @@
   --cream: #fdf1de;
   --gold: #e3ab47;
   --panel: #2a140a;
-  --cyan: #00d9ff;
-  --purple: #a855f7;
-  --blue: #0084ff;
-  --pink: #ff006e;
-  --orange: #ff6b35;
+  --cyan: #0fb5d4;
+  --purple: #9333ea;
+  --blue: #3b82f6;
+  --pink: #ec4899;
+  --orange: #f97316;
   color-scheme: dark;
 }
 
@@ -22,7 +22,7 @@ html, body, #root {
   margin: 0;
   height: 100%;
   font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-  background: linear-gradient(135deg, #0a0e27 0%, #1a0f2e 50%, #2a1810 100%);
+  background: linear-gradient(135deg, #0f1419 0%, #1a1410 100%);
   color: var(--cream);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -41,32 +41,31 @@ html, body, #root {
 
 .title {
   font-size: 2.4rem;
-  background: linear-gradient(135deg, var(--cyan), var(--gold), var(--orange));
+  background: linear-gradient(135deg, var(--cyan), var(--gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 2px;
   font-weight: bold;
-  text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
 }
 
 .text-input {
   padding: 12px 16px;
   border-radius: 10px;
-  border: 2px solid var(--cyan);
-  background: rgba(0, 217, 255, 0.08);
+  border: 1px solid rgba(15, 181, 212, 0.4);
+  background: rgba(15, 181, 212, 0.05);
   color: var(--cream);
   font-size: 1rem;
   width: 220px;
   text-align: center;
-  box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .text-input:focus {
   outline: none;
-  box-shadow: 0 0 25px rgba(0, 217, 255, 0.5), inset 0 0 10px rgba(0, 217, 255, 0.1);
-  background: rgba(0, 217, 255, 0.12);
+  border-color: var(--cyan);
+  background: rgba(15, 181, 212, 0.08);
+  box-shadow: 0 0 12px rgba(15, 181, 212, 0.15);
 }
 
 .code-input {
@@ -102,26 +101,23 @@ html, body, #root {
 .btn-primary {
   background: linear-gradient(135deg, var(--cyan), var(--blue));
   color: #000;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
   border: none;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(0, 217, 255, 0.7), inset 0 0 10px rgba(0, 217, 255, 0.3);
-  transform: translateY(-2px);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
   color: var(--cream);
-  border: 2px solid var(--cyan);
-  box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+  border: 1px solid var(--cyan);
 }
 
 .btn-secondary:hover {
-  background: rgba(0, 217, 255, 0.15);
-  box-shadow: 0 0 25px rgba(0, 217, 255, 0.5);
-  transform: translateY(-2px);
+  background: rgba(15, 181, 212, 0.08);
+  transform: translateY(-1px);
 }
 
 .length-stepper {
@@ -134,19 +130,19 @@ html, body, #root {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 2px solid var(--purple);
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(0, 217, 255, 0.1));
-  color: var(--cyan);
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: rgba(147, 51, 234, 0.08);
+  color: var(--purple);
   font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
   transition: all 0.3s ease;
 }
 
 .stepper-btn:hover:not(:disabled) {
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.6), inset 0 0 10px rgba(168, 85, 247, 0.2);
-  transform: scale(1.1);
+  background: rgba(147, 51, 234, 0.12);
+  border-color: var(--purple);
+  transform: scale(1.05);
 }
 
 .stepper-btn:disabled {
@@ -189,20 +185,20 @@ html, body, #root {
 .room-code {
   font-size: 2rem;
   letter-spacing: 6px;
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(168, 85, 247, 0.1));
-  border: 2px dashed var(--cyan);
+  background: rgba(15, 181, 212, 0.05);
+  border: 1px dashed rgba(15, 181, 212, 0.4);
   border-radius: 12px;
   padding: 12px 24px;
   color: var(--cyan);
   cursor: pointer;
   font-weight: bold;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
   transition: all 0.3s ease;
 }
 
 .room-code:hover {
-  box-shadow: 0 0 30px rgba(0, 217, 255, 0.6), inset 0 0 15px rgba(0, 217, 255, 0.15);
-  transform: scale(1.05);
+  background: rgba(15, 181, 212, 0.08);
+  border-color: var(--cyan);
+  transform: scale(1.02);
 }
 
 .copied-hint {
@@ -212,12 +208,11 @@ html, body, #root {
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(0, 217, 255, 0.2);
+  border: 3px solid rgba(15, 181, 212, 0.15);
   border-top-color: var(--cyan);
   border-right-color: var(--purple);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4), 0 0 40px rgba(168, 85, 247, 0.2);
 }
 
 @keyframes spin {
@@ -327,30 +322,29 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   padding: 6px 12px;
-  background: linear-gradient(90deg, rgba(0, 217, 255, 0.05), rgba(168, 85, 247, 0.05));
+  background: rgba(15, 181, 212, 0.04);
   border-radius: 12px;
-  border: 1px solid rgba(0, 217, 255, 0.2);
+  border: 1px solid rgba(15, 181, 212, 0.15);
 }
 
 .sound-toggle {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid var(--cyan);
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
+  border: 1px solid rgba(15, 181, 212, 0.3);
+  background: rgba(15, 181, 212, 0.06);
   color: var(--cyan);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
   transition: all 0.3s ease;
 }
 
 .sound-toggle:hover {
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.6), inset 0 0 10px rgba(0, 217, 255, 0.2);
-  transform: scale(1.08);
+  background: rgba(15, 181, 212, 0.1);
+  border-color: rgba(15, 181, 212, 0.4);
 }
 
 .top-title {
@@ -365,13 +359,12 @@ html, body, #root {
 
 .match-length-badge {
   font-size: 0.75rem;
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(168, 85, 247, 0.15));
-  border: 1px solid var(--cyan);
+  background: rgba(15, 181, 212, 0.08);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   border-radius: 8px;
   padding: 4px 10px;
   color: var(--cyan);
   font-weight: 600;
-  box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
 }
 
 .player-cards-row {
@@ -385,19 +378,17 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(168, 85, 247, 0.08));
+  background: rgba(15, 181, 212, 0.06);
   border-radius: 12px;
   padding: 8px 12px;
-  border: 1px solid var(--cyan);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   position: relative;
-  box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .player-card-active {
   border-color: var(--cyan);
-  box-shadow: 0 0 20px var(--cyan), inset 0 0 10px rgba(0, 217, 255, 0.15);
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
+  background: rgba(15, 181, 212, 0.1);
 }
 
 .player-card-right {
@@ -411,8 +402,7 @@ html, body, #root {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--cyan), var(--purple));
   flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
-  border: 2px solid var(--cyan);
+  border: 1px solid rgba(15, 181, 212, 0.4);
 }
 
 .player-name {
@@ -429,14 +419,13 @@ html, body, #root {
   position: absolute;
   top: -10px;
   right: 8px;
-  background: linear-gradient(135deg, var(--orange), var(--pink));
+  background: var(--orange);
   color: white;
   font-size: 0.65rem;
   padding: 4px 8px;
   border-radius: 6px;
   animation: pop 0.4s ease;
   font-weight: bold;
-  box-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
 }
 
 @keyframes pop {
@@ -457,26 +446,24 @@ html, body, #root {
 }
 
 .notice-banner, .reconnect-banner {
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
-  border: 1px solid var(--cyan);
+  background: rgba(15, 181, 212, 0.08);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 0.8rem;
   text-align: center;
   color: var(--cyan);
-  box-shadow: 0 0 15px rgba(0, 217, 255, 0.25);
 }
 
 .error-banner {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 0, 110, 0.1));
-  border: 1px solid var(--orange);
-  color: #ff9c7d;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: #f97316;
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 0.85rem;
   text-align: center;
   max-width: 280px;
-  box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
 }
 
 .emoji-float {
@@ -749,13 +736,12 @@ html, body, #root {
 }
 
 .pip-box {
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
-  border: 1px solid var(--cyan);
+  background: rgba(15, 181, 212, 0.08);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   border-radius: 8px;
   padding: 6px 14px;
   font-weight: bold;
   color: var(--cyan);
-  box-shadow: 0 0 12px rgba(0, 217, 255, 0.2);
 }
 
 .roll-btn {
@@ -775,19 +761,18 @@ html, body, #root {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 2px solid var(--cyan);
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
+  border: 1px solid rgba(15, 181, 212, 0.3);
+  background: rgba(15, 181, 212, 0.06);
   color: var(--cyan);
   font-size: 1.1rem;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
   transition: all 0.3s ease;
 }
 
 .control-btn:hover {
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.6), inset 0 0 10px rgba(0, 217, 255, 0.2);
-  transform: scale(1.08);
+  background: rgba(15, 181, 212, 0.1);
+  border-color: rgba(15, 181, 212, 0.4);
 }
 
 .control-btn-chat {
@@ -802,7 +787,7 @@ html, body, #root {
   height: 20px;
   padding: 0 4px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--orange), var(--pink));
+  background: var(--orange);
   color: white;
   font-size: 0.65rem;
   font-weight: bold;
@@ -810,7 +795,7 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  box-shadow: 0 0 0 2px rgba(10, 14, 39, 0.9), 0 0 12px rgba(255, 107, 53, 0.5);
+  box-shadow: 0 0 0 2px rgba(10, 14, 39, 0.9);
 }
 
 .chat-preview-toast {
@@ -844,12 +829,11 @@ html, body, #root {
   transform: translateX(-50%);
   display: flex;
   gap: 6px;
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(168, 85, 247, 0.1));
-  border: 1px solid var(--cyan);
+  background: rgba(15, 181, 212, 0.08);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   border-radius: 12px;
   padding: 8px;
   z-index: 20;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
 }
 
 .emoji-option {
@@ -869,23 +853,21 @@ html, body, #root {
   left: 8px;
   max-width: 460px;
   margin: 0 auto;
-  background: linear-gradient(135deg, rgba(10, 14, 39, 0.95), rgba(26, 15, 46, 0.9));
-  border: 1px solid var(--cyan);
+  background: var(--panel);
+  border: 1px solid rgba(15, 181, 212, 0.2);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   max-height: none;
   z-index: 20;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
 }
 
 .chat-header {
   display: flex;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+  border-bottom: 1px solid rgba(15, 181, 212, 0.15);
   font-weight: bold;
-  background: linear-gradient(90deg, rgba(0, 217, 255, 0.1), rgba(168, 85, 247, 0.05));
   color: var(--cyan);
 }
 
@@ -944,12 +926,11 @@ html, body, #root {
 }
 
 .overlay-card {
-  background: linear-gradient(135deg, rgba(10, 14, 39, 0.95), rgba(26, 15, 46, 0.95));
-  border: 2px solid var(--cyan);
+  background: var(--panel);
+  border: 1px solid rgba(15, 181, 212, 0.3);
   border-radius: 16px;
   padding: 24px 32px;
   text-align: center;
-  box-shadow: 0 0 30px rgba(0, 217, 255, 0.4), inset 0 0 15px rgba(0, 217, 255, 0.1);
   animation: slideIn 0.3s ease;
 }
 
